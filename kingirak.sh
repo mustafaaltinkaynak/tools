@@ -1,33 +1,74 @@
 #!/bin/bash
 
-echo ""
-echo "*****************************"
-echo "*****************************"
-echo "***       KİNGIRAK        ***"
-echo "*****************************"
-echo "*****************************"
-echo ""
-echo "Hedefe ait IP blogunda 80.port üzerinden kontroller sağlar."
-echo " "
-echo "./tara.sh alanadı"
-echo " "
-echo "Contact @m_altinkaynak"
-echo " "
+set -eo pipefail; [[ -z $TRACE ]] || set -x
 
-ip_address=`host $1 | awk '{ print $4 }'`
-IFS='.' read -r -a array <<< "$ip_address"
+usage() {
+	cat >&2 <<-EOF
+	*****************************
+	*****************************
+	***       KİNGIRAK        ***
+	*****************************
+	*****************************
 
-echo "$(tput bold)$ip_address$(tput sgr0) ip adresine sahip $(tput bold)$(tput setaf 7)$1$(tput sgr0) taranıyor."
+	Hedefe ait IP blogunda 80.port üzerinden kontroller sağlar.
 
-for ip in ${array[0]}.${array[1]}.${array[2]}.{0..255}
-do 
-    result=0
-    result=$(curl --connect-timeout 1 --max-time 1 --header "Connection: keep-alive" -s -D - $ip -o /dev/null | awk 'NR==1{print $2}')
-    if [[ $result -eq "200" ]]
+	./tara.sh alanadı
+
+	Contact @m_altinkaynak
+
+	EOF
+	exit 128
+}
+
+die() {
+	echo >&2 "$@"
+	exit 1
+}
+
+bold() {
+	echo -e "\e[1m$1\e[0m"
+}
+
+get() {
+	local result
+	result=$(
+		curl --connect-timeout 1 \
+		     --max-time 1 \
+		     --header "Connection: keep-alive" \
+		     -s -D - "$1" -o /dev/null |
+		awk 'NR==1{print $2}'
+	)
+    if [[ $result =~ ^-?[0-9]+$ ]] ;
     then
-        aciklama="Sayfa bulundu"
+        echo "("$result") Sayfa bulundu."
     else
-        aciklama="Bir şey bulunamadı."
+        echo "Sayfa bulunamadı."
     fi
-    printf '%s %s %s\n' "$ip" "$aciklama" "$result"
-done
+}
+
+resolv() {
+	local addr
+	addr=$(host "$1" 2>/dev/null || true)
+	echo "$addr" | awk 'NR == 1 { print $4 }'
+}
+
+main() {
+	[[ $# -ne 0 ]] || usage
+
+	local domain=$1
+	local addr
+	local ip
+	local desc
+	local octets
+
+	addr=$(resolv "$domain")
+	IFS='.' read -r -a octets <<<"$addr"
+
+	echo >&2 "$(bold "$addr") ip adresine sahip $(bold "$domain") taranıyor."
+
+	for ip in ${octets[0]}.${octets[1]}.${octets[2]}.{0..255}; do
+		printf '%s %s %s\n' "$ip" "$(get "$ip")"
+	done
+}
+
+[[ "${BASH_SOURCE[0]}" != "$0" ]] || main "$@"
