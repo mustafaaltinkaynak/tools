@@ -14,7 +14,7 @@ echo " "
 echo "Contact @m_altinkaynak"
 echo " "
 
-ip_address=`getent hosts $1 | awk '{ print $1 }'`
+ip_address=`host $1 | awk '{ print $4 }'`
 IFS='.' read -r -a array <<< "$ip_address"
 
 echo "$(tput bold)$ip_address$(tput sgr0) ip adresine sahip $(tput bold)$(tput setaf 7)$1$(tput sgr0) taranıyor."
