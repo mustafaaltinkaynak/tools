@@ -40,7 +40,7 @@ get() {
 	)
     if [[ $result =~ ^-?[0-9]+$ ]] ;
     then
-        echo "("$result") Sayfa bulundu."
+        echo >&2 "$(bold "$result") Sayfa bulundu."
     else
         echo "Sayfa bulunamadı."
     fi
