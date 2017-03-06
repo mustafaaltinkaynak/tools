@@ -1,0 +1,15 @@
+machine:
+  timezone:
+    Europe/Istanbul
+dependencies:
+  pre:
+    - sudo apt-add-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports main restricted universe"
+    - sudo apt-get update
+    - sudo apt-get install -y --no-install-recommends -t trusty-backports shellcheck
+    - go get github.com/svent/sift
+    - cd $HOME && git clone https://github.com/sstephenson/bats.git && cd bats && sudo ./install.sh /usr/local
+test:
+  pre:
+    - sift --git --exclude-dirs tests --targets -t shell | xargs -r shellcheck
+  override:
+    - bats tests
